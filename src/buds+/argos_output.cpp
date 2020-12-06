@@ -3,9 +3,11 @@
 #include <fstream>
 #include <optional>
 #include <ostream>
+#include <sstream>
 #include <sys/stat.h>
 
 #include <fmt/format.h>
+#include <unistd.h>
 #include "boost/algorithm/string/replace.hpp"
 
 #include "message.h"
@@ -23,41 +25,31 @@ constexpr inline auto OUTPUT_FILE_TEMP_PREFIX = "/tmp/buds_";
 constexpr inline auto OUTPUT_FILE_SHEBANG = "#!/bin/bash";
 constexpr inline auto OUTPUT_FILE_PERMISSIONS = 0755;
 
-std::mutex trayInfoMutex;
-
-static BudsTrayInfo& trayInfo()
-{
-    static BudsTrayInfo info;
-    return info;
-}
-
 void ArgosOutput::update(const StatusUpdatedData& data)
 {
-    const std::lock_guard<std::mutex> lock(trayInfoMutex);
-    auto& info = trayInfo();
+    const std::lock_guard<std::mutex> lock(updateMutex_);
 
-    info.leftBattery = data.deviceBatGageL;
-    info.rightBattery = data.deviceBatGageR;
+    info_.leftBattery = data.deviceBatGageL;
+    info_.rightBattery = data.deviceBatGageR;
 
     PlacementParser placement{data.placement};
-    info.leftPlacement = placement.left();
-    info.rightPlacement = placement.right();
+    info_.leftPlacement = placement.left();
+    info_.rightPlacement = placement.right();
 }
 
 void ArgosOutput::update(const ExtendedStatusUpdatedData& data)
 {
-    const std::lock_guard<std::mutex> lock(trayInfoMutex);
-    auto& info = trayInfo();
+    const std::lock_guard<std::mutex> lock(updateMutex_);
 
-    info.leftBattery = data.deviceBatGageL;
-    info.rightBattery = data.deviceBatGageR;
+    info_.leftBattery = data.deviceBatGageL;
+    info_.rightBattery = data.deviceBatGageR;
 
     PlacementParser placement{data.placement};
-    info.leftPlacement = placement.left();
-    info.rightPlacement = placement.right();
+    info_.leftPlacement = placement.left();
+    info_.rightPlacement = placement.right();
 }
 
-std::optional<uint8_t> batteryInfo(const BudsTrayInfo& info)
+std::optional<uint8_t> ArgosOutput::batteryInfo(const BudsTrayInfo& info)
 {
     if (info.leftBattery && info.rightBattery) {
         return std::min(*info.leftBattery, *info.rightBattery);
@@ -71,7 +63,7 @@ std::optional<uint8_t> batteryInfo(const BudsTrayInfo& info)
     return std::nullopt;
 }
 
-std::string wearStatusInfo(const BudsTrayInfo& info)
+std::string ArgosOutput::wearStatusInfo(const BudsTrayInfo& info)
 {
     auto indicator = [](PlacementParser::Placement status) {
         switch (status) {
@@ -95,12 +87,10 @@ std::string wearStatusInfo(const BudsTrayInfo& info)
 
 void ArgosOutput::render()
 {
-    const std::lock_guard<std::mutex> lock(trayInfoMutex);
-    auto& info = trayInfo();
-    auto battery = batteryInfo(info);
+    const std::lock_guard<std::mutex> lock(updateMutex_);
 
     if (tempFile_.empty()) {
-        tempFile_ = buildTempFilePath();
+        tempFile_ = OUTPUT_FILE_TEMP_PREFIX + boost::algorithm::replace_all_copy(outputFile_, "/", "!");
 
         std::ofstream ofs(outputFile_);
         ofs << OUTPUT_FILE_SHEBANG << std::endl
@@ -109,16 +99,28 @@ void ArgosOutput::render()
     }
 
     std::ofstream ofs(tempFile_);
-    ofs << fmt::format(
+    ofs << buildScript();
+}
+
+std::string ArgosOutput::buildScript() const
+{
+    auto battery = batteryInfo(info_);
+    auto pid = getpid();
+
+    std::stringstream ss;
+    ss << fmt::format(
         "{} {}",
         HEADPHONES_EMOJI,
         battery ? fmt::format("{}% ", *battery) : "")
+        << std::endl
         << std::endl;
-}
-
-std::string ArgosOutput::buildTempFilePath() const
-{
-    return OUTPUT_FILE_TEMP_PREFIX + boost::algorithm::replace_all_copy(outputFile_, "/", "!");
+    ss << "---" << std::endl;
+    ss << "Restart | "
+       << "iconName=view-refresh "
+       << fmt::format("bash='kill -HUP {}' ", pid)
+       << "terminal=false"
+       << std::endl;
+    return ss.str();
 }
 
 } // namespace buds

@@ -21,10 +21,8 @@ using namespace constants;
 
 class BudsClient {
 public:
-    const Config config;
-
     BudsClient(Config config, std::shared_ptr<Output> output) :
-        config(std::move(config)), output_(std::move(output)) {}
+        config_(std::move(config)), output_(std::move(output)) {}
 
     int connect(const std::chrono::duration<int64_t>& duration);
 
@@ -33,6 +31,7 @@ public:
     void changeMainEarbud(MainEarbud earbud);
 
   private:
+    const Config config_;
     const std::shared_ptr<Output> output_;
     const MessageBuilder builder_{};
 

@@ -4,12 +4,18 @@
 #include <string>
 #include <utility>
 
+#include "config.h"
 #include "output.h"
 #include "message.h"
 
 namespace buds {
 
-// TODO: Write Argos bash script to ~/.config/argos on startup and delete on exit
+struct BudsTrayInfo {
+    std::optional<uint8_t> leftBattery;
+    std::optional<uint8_t> rightBattery;
+    std::optional<PlacementParser::Placement> leftPlacement;
+    std::optional<PlacementParser::Placement> rightPlacement;
+};
 
 class ArgosOutput : public Output {
 public:
@@ -26,15 +32,14 @@ public:
 private:
     const std::string outputFile_;
     std::string tempFile_;
+    BudsTrayInfo info_;
+    std::mutex updateMutex_;
 
-    std::string buildTempFilePath() const;
-};
+    std::string buildScript() const;
 
-struct BudsTrayInfo {
-    std::optional<uint8_t> leftBattery;
-    std::optional<uint8_t> rightBattery;
-    std::optional<PlacementParser::Placement> leftPlacement;
-    std::optional<PlacementParser::Placement> rightPlacement;
+    static std::optional<uint8_t> batteryInfo(const BudsTrayInfo& info);
+
+    static  std::string wearStatusInfo(const BudsTrayInfo& info);
 };
 
 } // namespace buds

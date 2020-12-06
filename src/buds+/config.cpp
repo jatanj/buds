@@ -1,4 +1,5 @@
 #include "config.h"
+#include "util.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -7,7 +8,9 @@ namespace buds {
 // TODO: Allow user to name each connection instead of using 'buds+'
 
 constexpr inline auto KEY_BUDS = "buds+";
-constexpr inline auto KEY_BEFORE_CONNECT = "before_connect";
+constexpr inline auto KEY_COMMAND = "command";
+constexpr inline auto KEY_CONNECT = "connect";
+constexpr inline auto KEY_RESTART = "restart";
 constexpr inline auto KEY_ADDRESS = "address";
 constexpr inline auto KEY_OUTPUT = "output";
 constexpr inline auto KEY_OUTPUT_TYPE = "type";
@@ -59,17 +62,20 @@ Config parseConfig(const std::string &path)
         return result;
     }
 
-    if (auto command = config[KEY_BUDS][KEY_BEFORE_CONNECT]) {
-        result.beforeConnect = command.as<std::string>();
+    if (auto connect = config[KEY_BUDS][KEY_COMMAND][KEY_CONNECT]) {
+        result.command.connect = connect.as<std::string>();
+    }
+    if (auto restart = config[KEY_BUDS][KEY_COMMAND][KEY_RESTART]) {
+        result.command.restart = restart.as<std::string>();
     }
     if (auto address = config[KEY_BUDS][KEY_ADDRESS]) {
         result.address = address.as<std::string>();
     }
     if (auto outputType = config[KEY_BUDS][KEY_OUTPUT][KEY_OUTPUT_TYPE]) {
-        result.outputType = parseOutputType(outputType.as<std::string>());
+        result.output.type = parseOutputType(outputType.as<std::string>());
     }
     if (auto outputFile = config[KEY_BUDS][KEY_OUTPUT][KEY_OUTPUT_FILE]) {
-        result.outputFile = outputFile.as<std::string>();
+        result.output.file = util::shellExpand(outputFile.as<std::string>());
     }
     if (auto lockTouchpad = config[KEY_BUDS][KEY_LOCK_TOUCHPAD]) {
         result.lockTouchpad = lockTouchpad.as<bool>();

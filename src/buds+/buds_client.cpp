@@ -4,7 +4,7 @@ namespace buds {
 
 int BudsClient::connect(const std::chrono::duration<int64_t>& duration)
 {
-    if (auto error = btClient_.connect(config.address)) {
+    if (auto error = btClient_.connect(config_.address)) {
         return error;
     }
 
@@ -14,10 +14,10 @@ int BudsClient::connect(const std::chrono::duration<int64_t>& duration)
         });
     });
 
-    lockTouchpad(config.lockTouchpad);
+    lockTouchpad(config_.lockTouchpad);
 
-    if (config.mainEarbud) {
-        changeMainEarbud(*config.mainEarbud);
+    if (config_.mainEarbud) {
+        changeMainEarbud(*config_.mainEarbud);
     }
 
     readTask_.wait_for(duration);
@@ -72,8 +72,8 @@ void BudsClient::handle(Message* msg)
             output_->update(status->data());
         }
 
-        if (config.mainEarbud && *config.mainEarbud != status->data().mainConnection) {
-            changeMainEarbud(*config.mainEarbud);
+        if (config_.mainEarbud && *config_.mainEarbud != status->data().mainConnection) {
+            changeMainEarbud(*config_.mainEarbud);
         }
     }
 

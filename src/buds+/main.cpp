@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_set>
 #include <cstdlib>
+#include <csignal>
 
 #include "buds_client.h"
 #include "argos_output.h"
@@ -23,13 +24,34 @@ const std::unordered_set<int> RECONNECT_ERRORS = { // NOLINT
     ECONNABORTED
 };
 
-int doBeforeConnect(const buds::Config& config)
+int doConnectCommand(const buds::Config& config)
 {
-    if (config.beforeConnect.empty()) {
+    if (config.command.connect.empty()) {
         return 0;
     }
     // FIXME: Avoid using system()
-    return system(config.beforeConnect.c_str()); // NOLINT
+    return system(config.command.connect.c_str()); // NOLINT
+}
+
+struct RestartData {
+    std::string command;
+} restartData; // NOLINT
+
+void handleRestart(int signum)
+{
+    boost::algorithm::trim(restartData.command);
+    if (restartData.command.empty()) {
+        return;
+    }
+    switch (signum) {
+        case SIGHUP:
+            // FIXME: Avoid using system()
+            system(restartData.command.c_str()); // NOLINT
+            break;
+        default:
+            LOG_WARN("Sigal {} not handled", signum);
+            break;
+    }
 }
 
 std::filesystem::path defaultConfig()
@@ -56,22 +78,20 @@ std::shared_ptr<buds::Output> initOutput(const buds::Config& config)
 {
     std::shared_ptr<buds::Output> output;
 
-    if (config.outputType) {
-        std::string file;
-        if (!config.outputFile.empty()) {
-            file = buds::util::shellExpand(config.outputFile);
-            LOG_INFO("Outputting to file '{}'", file);
+    if (config.output.type) {
+        if (!config.output.file.empty()) {
+            LOG_INFO("Outputting to file '{}'", config.output.file);
         }
-        switch (*config.outputType) {
+        switch (*config.output.type) {
             case buds::ARGOS:
-                if (!file.empty()) {
-                    output = std::make_shared<buds::ArgosOutput>(file);
+                if (!config.output.file.empty()) {
+                    output = std::make_shared<buds::ArgosOutput>(config.output.file);
                 } else {
                     LOG_ERROR("File config is not set for Argos output");
                 }
                 break;
             default:
-                LOG_WARN("Output {} is not handled", *config.outputType);
+                LOG_WARN("Output {} is not handled", *config.output.type);
                 break;
         }
     }
@@ -88,14 +108,16 @@ int main(int argc, char** argv)
     auto config = loadConfig(args);
     auto output = initOutput(config);
 
-    buds::BudsClient buds(std::move(config), std::move(output));
+    restartData.command = config.command.restart;
+    signal(SIGHUP, handleRestart);
+
+    buds::BudsClient buds(config, std::move(output));
 
     int wait = RECONNECT_WAIT_SECONDS;
     while (true) {
-        auto rc = doBeforeConnect(buds.config);
+        auto rc = doConnectCommand(config);
         if (rc > 0) {
-            LOG_ERROR("beforeConnect failed with code {}", rc);
-            break;
+            LOG_ERROR("Connect command failed with code {}", rc);
         }
 
         auto error = buds.connect(std::chrono::hours::max());

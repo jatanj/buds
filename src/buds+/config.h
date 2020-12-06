@@ -13,10 +13,19 @@ enum OutputConfig {
 };
 
 struct Config {
-    std::string beforeConnect;
+    struct Command {
+        std::string connect;
+        std::string restart;
+    };
+
+    struct Output {
+        std::optional<OutputConfig> type;
+        std::string file;
+    };
+
+    Command command;
     std::string address;
-    std::optional<OutputConfig> outputType;
-    std::string outputFile;
+    Output output;
     bool lockTouchpad = false;
     std::optional<buds::MainEarbud> mainEarbud;
 };
@@ -29,7 +38,17 @@ namespace fmt {
 
 FMT_FORMATTER(
     buds::Config,
-    "Config{{address={}, lockTouchpad={}, mainEarbud={}}}",
-    value.address, value.lockTouchpad, value.mainEarbud);
+    "Config{{"
+    "command={{connect={}, restart={}}}, "
+    "address={}, "
+    "output={{type={}, file={}}}, "
+    "lockTouchpad={}, "
+    "mainEarbud={}"
+    "}}",
+    value.command.connect, value.command.restart,
+    value.address,
+    value.output.type, value.output.file,
+    value.lockTouchpad,
+    value.mainEarbud);
 
 } // namespace fmt

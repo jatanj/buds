@@ -1,0 +1,11 @@
+/build/
+/scripts/
+/.cache/
+/conaninfo.txt
+/conanbuildinfo.txt
+/conanbuildinfo.cmake
+/graph_info.json
+/conan.lock
+/compile_commands.json
+/cmake-build-debug
+/.idea

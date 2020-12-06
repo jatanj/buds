@@ -1,0 +1,10 @@
+Checks: '*,-altera-*,-fuchsia-*,-llvmlibc-*,-hicpp-*,-modernize-use-nodiscard,-modernize-use-trailing-return-type,-google-build-using-namespace,
+  -cppcoreguidelines-non-private-member-variables-in-classes,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -misc-non-private-member-variables-in-classes,-modernize-avoid-c-arrays,-cppcoreguidelines-avoid-c-arrays,-readability-implicit-bool-conversion,
+  -google-readability-todo,-readability-qualified-auto'
+User: jpatel
+CheckOptions:
+  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value: '1'
+  - key: cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value: '1'

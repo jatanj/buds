@@ -12,16 +12,14 @@
 #include "output.h"
 #include "util.h"
 
-constexpr inline auto DEFAULT_SHELL = "/bin/sh";
-
-constexpr inline auto DEFAULT_CONFIG_DIR = "$HOME/.config/buds+";
-constexpr inline auto DEFAULT_CONFIG_FILE = "default.yaml";
+constexpr auto DEFAULT_CONFIG_DIR = "$HOME/.config/buds+";
+constexpr auto DEFAULT_CONFIG_FILE = "default.yaml";
 
 constexpr auto RECONNECT_WAIT_SECONDS = 1;
 constexpr auto RECONNECT_WAIT_MULTIPLIER = 2;
 constexpr auto RECONNECT_WAIT_MAX = 60;
-const std::unordered_set<int> RECONNECT_ERRORS = { // NOLINT
-    ECONNABORTED
+const std::unordered_set<int> RECONNECT_RETURN_CODES = { // NOLINT
+    0, ECONNABORTED
 };
 
 int doConnectCommand(const buds::Config& config)
@@ -33,20 +31,27 @@ int doConnectCommand(const buds::Config& config)
     return system(config.command.connect.c_str()); // NOLINT
 }
 
-struct RestartData {
+struct ReconnectData {
+    buds::BudsClient* buds = nullptr;
     std::string command;
-} restartData; // NOLINT
+} reconnectData; // NOLINT
 
-void handleRestart(int signum)
+void handleReconnect(int signum)
 {
-    boost::algorithm::trim(restartData.command);
-    if (restartData.command.empty()) {
+    boost::algorithm::trim(reconnectData.command);
+    if (!reconnectData.buds || reconnectData.command.empty()) {
         return;
     }
+
+    if (auto error = reconnectData.buds->close()) {
+        LOG_ERROR("Cannot reconnect (failed to close connection : {})", error);
+        return;
+    }
+
     switch (signum) {
         case SIGHUP:
             // FIXME: Avoid using system()
-            system(restartData.command.c_str()); // NOLINT
+            system(reconnectData.command.c_str()); // NOLINT
             break;
         default:
             LOG_WARN("Sigal {} not handled", signum);
@@ -56,7 +61,7 @@ void handleRestart(int signum)
 
 std::filesystem::path defaultConfig()
 {
-    auto p = std::filesystem::path{buds::util::shellExpand(DEFAULT_CONFIG_DIR)};
+    auto p = std::filesystem::path(buds::util::shellExpand(DEFAULT_CONFIG_DIR));
     p = p / DEFAULT_CONFIG_FILE;
     return p;
 }
@@ -108,21 +113,21 @@ int main(int argc, char** argv)
     auto config = loadConfig(args);
     auto output = initOutput(config);
 
-    restartData.command = config.command.restart;
-    signal(SIGHUP, handleRestart);
-
     buds::BudsClient buds(config, std::move(output));
+
+    reconnectData.buds = &buds;
+    reconnectData.command = config.command.reconnect;
+    signal(SIGHUP, handleReconnect);
 
     int wait = RECONNECT_WAIT_SECONDS;
     while (true) {
-        auto rc = doConnectCommand(config);
-        if (rc > 0) {
+        if (auto rc = doConnectCommand(config)) {
             LOG_ERROR("Connect command failed with code {}", rc);
         }
 
-        auto error = buds.connect(std::chrono::hours::max());
-        if (!RECONNECT_ERRORS.count(error)) {
-            break;
+        auto rc = buds.connect();
+        if (!RECONNECT_RETURN_CODES.count(rc)) {
+            return rc;
         }
 
         std::this_thread::sleep_for(std::chrono::seconds(wait));

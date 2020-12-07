@@ -18,14 +18,20 @@ public:
 
     int connect(const std::string& address);
 
-    ssize_t write(const std::vector<uint8_t>& msg) const;
+    int close();
+
+    int write(const std::vector<uint8_t>& msg) const;
 
     template<typename F>
     int read(const F& callback)
     {
         ssize_t n = 0;
         do {
-            n = ::read(socket_, readBuffer_, READ_BUFFER_SIZE);
+            auto s = socket_;
+            if (s == SOCKET_CLOSED) {
+                break;
+            }
+            n = ::read(s, readBuffer_, READ_BUFFER_SIZE);
             if (n > 0) {
                 auto data = std::vector<uint8_t>(readBuffer_, readBuffer_ + n);
                 LOG_INFO("response[{} bytes]={}", n, util::toHex(data, true).c_str());
@@ -41,11 +47,10 @@ public:
 private:
     static constexpr auto ERRNO_TO_STRING_LENGTH = 64;
     static constexpr auto READ_BUFFER_SIZE = 1024;
+    static constexpr auto SOCKET_CLOSED = -1;
 
-    int socket_ = -1;
+    int socket_ = SOCKET_CLOSED;
     uint8_t readBuffer_[READ_BUFFER_SIZE] = {};
-
-    void close();
 
     static std::string errnoToString(int err)
     {

@@ -2,7 +2,7 @@
 
 namespace buds {
 
-int BudsClient::connect(const std::chrono::duration<int64_t>& duration)
+int BudsClient::connect()
 {
     if (auto error = btClient_.connect(config_.address)) {
         return error;
@@ -20,8 +20,13 @@ int BudsClient::connect(const std::chrono::duration<int64_t>& duration)
         changeMainEarbud(*config_.mainEarbud);
     }
 
-    readTask_.wait_for(duration);
+    readTask_.wait_for(std::chrono::hours::max());
     return readTask_.get();
+}
+
+int BudsClient::close()
+{
+    return btClient_.close();
 }
 
 void BudsClient::lockTouchpad(bool enabled)
@@ -62,10 +67,8 @@ void BudsClient::handle(Message* msg)
             LOG_ERROR("EXTENDED_STATUS_UPDATED has no data");
         }
 
-        // We need to send an empty EXTENDED_STATUS_MESSAGE response back followed by MANAGER_INFO.
         write(ExtendedStatusUpdatedMessage{std::nullopt});
         write(ManagerInfoMessage{ManagerInfoData{}});
-
     } else if (auto* status = dynamic_cast<StatusUpdatedMessage*>(msg)) {
         LOG_INFO("{}", status->data());
         if (output_) {

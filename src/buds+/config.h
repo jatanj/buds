@@ -15,7 +15,7 @@ enum OutputConfig {
 struct Config {
     struct Command {
         std::string connect;
-        std::string restart;
+        std::string reconnect;
     };
 
     struct Output {
@@ -39,13 +39,13 @@ namespace fmt {
 FMT_FORMATTER(
     buds::Config,
     "Config{{"
-    "command={{connect={}, restart={}}}, "
+    "command={{connect={}, reconnect={}}}, "
     "address={}, "
     "output={{type={}, file={}}}, "
     "lockTouchpad={}, "
     "mainEarbud={}"
     "}}",
-    value.command.connect, value.command.restart,
+    value.command.connect, value.command.reconnect,
     value.address,
     value.output.type, value.output.file,
     value.lockTouchpad,

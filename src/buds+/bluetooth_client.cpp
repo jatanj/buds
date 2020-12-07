@@ -7,6 +7,7 @@
 #include <bluetooth/rfcomm.h>
 
 #include <fmt/core.h>
+#include <sys/types.h>
 
 #include "util.h"
 
@@ -19,7 +20,9 @@ BluetoothClient::~BluetoothClient()
 
 int BluetoothClient::connect(const std::string& address)
 {
-    close();
+    if (auto error = close()) {
+        return error;
+    }
 
     struct sockaddr_rc addr{};
     addr.rc_family = AF_BLUETOOTH;
@@ -41,23 +44,25 @@ int BluetoothClient::connect(const std::string& address)
     return 0;
 }
 
-void BluetoothClient::close()
+int BluetoothClient::close()
 {
-    if (socket_ >= 0) {
+    if (socket_ != SOCKET_CLOSED) {
         auto n = ::close(socket_);
         if (n < 0) {
-            LOG_INFO("Failed to close socket ({})", errnoToString(errno).c_str());
-        } else {
-            LOG_INFO("Closed socket");
-            socket_ = -1;
+            LOG_INFO("Failed to close connection ({})", errnoToString(errno).c_str());
+            return errno;
         }
+        LOG_INFO("Closed connection");
+        socket_ = SOCKET_CLOSED;
     }
+    return 0;
 }
 
-ssize_t BluetoothClient::write(const std::vector<uint8_t>& msg) const
+int BluetoothClient::write(const std::vector<uint8_t>& msg) const
 {
     if (socket_ < 0) {
-        return false;
+        LOG_ERROR("Socket is closed (cannot write {} bytes)", msg.size());
+        return -1;
     }
 
     LOG_INFO("request[{} bytes]={}", msg.size(), util::toHex(msg, true).c_str());
@@ -65,8 +70,13 @@ ssize_t BluetoothClient::write(const std::vector<uint8_t>& msg) const
     auto n = ::write(socket_, msg.data(), msg.size());
     if (n < 0) {
         LOG_INFO("Failed to write {} bytes : {}", msg.size(), errnoToString(errno).c_str());
+        return errno;
     }
-    return n;
+    if (static_cast<size_t>(n) < msg.size()) {
+        LOG_INFO("Failed to write {} bytes ({} written)", msg.size(), n);
+        return -1;
+    }
+    return 0;
 }
 
 } // namespace buds

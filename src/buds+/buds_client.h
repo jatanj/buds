@@ -24,7 +24,9 @@ public:
     BudsClient(Config config, std::shared_ptr<Output> output) :
         config_(std::move(config)), output_(std::move(output)) {}
 
-    int connect(const std::chrono::duration<int64_t>& duration);
+    int connect();
+
+    int close();
 
     void lockTouchpad(bool enabled);
 

@@ -1,4 +1,5 @@
 /build/
+/release/
 /scripts/
 /.cache/
 /conaninfo.txt

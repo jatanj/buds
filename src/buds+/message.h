@@ -42,9 +42,7 @@ public:
 struct LockTouchpadMessage : MessageT<MSG_ID_LOCK_TOUCHPAD> {
     bool enabled;
 
-    explicit LockTouchpadMessage(bool enabled) : enabled(enabled)
-    {
-    }
+    explicit LockTouchpadMessage(bool enabled) : enabled(enabled) {}
 
     ~LockTouchpadMessage() override = default;
 
@@ -59,9 +57,7 @@ enum MainEarbud : uint8_t {
 struct MainChangeMessage : MessageT<MSG_ID_MAIN_CHANGE> {
     MainEarbud earbud;
 
-    explicit MainChangeMessage(MainEarbud earbud) : earbud(earbud)
-    {
-    }
+    explicit MainChangeMessage(MainEarbud earbud) : earbud(earbud) {}
 
     std::vector<uint8_t> payload() const override { return {earbud}; }
 };
@@ -112,7 +108,7 @@ struct PlacementParser {
 
     Placement right() const
     {
-        return static_cast<Placement>(placement & 0x0f);
+        return static_cast<Placement>(placement & 0xf);
     }
 };
 
@@ -139,17 +135,12 @@ struct ExtendedStatusUpdatedData {
 struct ExtendedStatusUpdatedMessage : MessageT<MSG_ID_EXTENDED_STATUS_UPDATED, true> {
     const std::optional<ExtendedStatusUpdatedData> data;
 
-    explicit ExtendedStatusUpdatedMessage(const std::optional<ExtendedStatusUpdatedData> &data) : data(data)
-    {
-    }
+    explicit ExtendedStatusUpdatedMessage(const std::optional<ExtendedStatusUpdatedData>& data = std::nullopt) : data(data) {}
 
     ~ExtendedStatusUpdatedMessage() override = default;
 
     std::vector<uint8_t> payload() const override
     {
-        if (data) {
-            throw std::runtime_error("Data not allowed for ExtendedStatusUpdate payload");
-        }
         return {0};
     }
 };
@@ -164,14 +155,16 @@ struct StatusUpdatedData {
 };
 
 struct StatusUpdatedMessage : MessageT<MSG_ID_STATUS_UPDATED, true> {
-    explicit StatusUpdatedMessage(StatusUpdatedData data) : data_(data) {}
+    const std::optional<StatusUpdatedData> data;
 
-    const StatusUpdatedData& data() const { return data_; }
+    explicit StatusUpdatedMessage(const std::optional<StatusUpdatedData>& data = std::nullopt) : data(data) {}
 
-    std::vector<uint8_t> payload() const override { return {}; }
+    ~StatusUpdatedMessage() override = default;
 
-private:
-    const StatusUpdatedData data_;
+    std::vector<uint8_t> payload() const override
+    {
+        return {0};
+    }
 };
 
 } // namespace buds

@@ -57,29 +57,10 @@ void BudsClient::write(const Message& msg)
 void BudsClient::handle(Message* msg)
 {
     if (auto *status = dynamic_cast<ExtendedStatusUpdatedMessage*>(msg)) {
-        auto data = status->data;
-        if (data) {
-            LOG_INFO("{}", *data);
-            if (output_) {
-                output_->update(*data);
-            }
-        } else {
-            LOG_ERROR("EXTENDED_STATUS_UPDATED has no data");
-        }
-
-        write(ExtendedStatusUpdatedMessage{std::nullopt});
-        write(ManagerInfoMessage{ManagerInfoData{}});
+        handleStatusUpdate(status);
     } else if (auto* status = dynamic_cast<StatusUpdatedMessage*>(msg)) {
-        LOG_INFO("{}", status->data());
-        if (output_) {
-            output_->update(status->data());
-        }
-
-        if (config_.mainEarbud && *config_.mainEarbud != status->data().mainConnection) {
-            changeMainEarbud(*config_.mainEarbud);
-        }
+        handleStatusUpdate(status);
     }
-
     if (output_) {
         output_->render();
     }

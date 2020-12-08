@@ -1,7 +1,6 @@
 #include "log.h"
 
-namespace buds {
-namespace log {
+namespace buds::log {
 
 static constexpr auto DEFAULT_NAME = "logger";
 static constexpr auto DEFAULT_PATTERN = "%H:%M:%S.%e %z %^%l%$ [%t] %v";
@@ -21,6 +20,5 @@ spdlog::logger& logger()
     return *logger;
 }
 
-} // namespace log
-} // namespace buds
+} // namespace buds::log
 

@@ -15,11 +15,12 @@
 constexpr auto DEFAULT_CONFIG_DIR = "$HOME/.config/buds+";
 constexpr auto DEFAULT_CONFIG_FILE = "default.yaml";
 
-constexpr auto RECONNECT_WAIT_SECONDS = 1;
+constexpr auto RECONNECT_WAIT_SECONDS = 5;
 constexpr auto RECONNECT_WAIT_MULTIPLIER = 2;
 constexpr auto RECONNECT_WAIT_MAX = 60;
-const std::unordered_set<int> RECONNECT_RETURN_CODES = { // NOLINT
-    0, ECONNABORTED
+const std::unordered_set<int> RECONNECT_RETURN_CODES{ // NOLINT
+    0,
+    ECONNABORTED
 };
 
 int doConnectCommand(const buds::Config& config)
@@ -61,7 +62,7 @@ void handleReconnect(int signum)
 
 std::filesystem::path defaultConfig()
 {
-    auto p = std::filesystem::path(buds::util::shellExpand(DEFAULT_CONFIG_DIR));
+    std::filesystem::path p{buds::util::shellExpand(DEFAULT_CONFIG_DIR)};
     p = p / DEFAULT_CONFIG_FILE;
     return p;
 }
@@ -106,14 +107,12 @@ std::shared_ptr<buds::Output> initOutput(const buds::Config& config)
 
 int main(int argc, char** argv)
 {
-    using namespace buds;
-
-    auto args = parseArgs(std::vector<std::string>{argv + 1, argv + argc});
+    auto args = buds::parseArgs(std::vector<std::string>{argv + 1, argv + argc});
 
     auto config = loadConfig(args);
     auto output = initOutput(config);
 
-    buds::BudsClient buds(config, std::move(output));
+    buds::BudsClient buds{config, std::move(output)};
 
     reconnectData.buds = &buds;
     reconnectData.command = config.command.reconnect;

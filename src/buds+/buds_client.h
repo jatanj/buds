@@ -45,6 +45,33 @@ public:
     void write(const Message& msg);
 
     void handle(Message* msg);
+
+    template <typename T>
+    void handleStatusUpdate(T* status)
+    {
+        if (status->data) {
+            LOG_INFO("{}", *status->data);
+            if (output_) {
+                output_->update(*status->data);
+            }
+        } else {
+            LOG_ERROR("Message has no data");
+        }
+
+        // Respond with one zero byte with the same message id.
+        write(T{});
+
+        // Also respond with MANAGER_INFO for EXTENDED_STATUS_UPDATED messages.
+        // Not sure if we need to do this for STATUS_UPDATED messages.
+        if constexpr (std::is_same_v<T, ExtendedStatusUpdatedMessage>) {
+            write(ManagerInfoMessage{ManagerInfoData{}});
+        }
+
+        if (config_.mainEarbud && *config_.mainEarbud != status->data->mainConnection) {
+            changeMainEarbud(*config_.mainEarbud);
+        }
+    }
+
 };
 
 } // namespace buds

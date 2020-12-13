@@ -19,8 +19,10 @@ constexpr auto RECONNECT_WAIT_SECONDS = 5;
 constexpr auto RECONNECT_WAIT_MULTIPLIER = 2;
 constexpr auto RECONNECT_WAIT_MAX = 60;
 const std::unordered_set<int> RECONNECT_RETURN_CODES{ // NOLINT
-    0,
     ECONNABORTED
+};
+const std::unordered_set<int> SUCCESS_RETURN_CODES{ // NOLINT
+    0
 };
 
 int doConnectCommand(const buds::Config& config)
@@ -125,12 +127,14 @@ int main(int argc, char** argv)
         }
 
         auto rc = buds.connect();
-        if (!RECONNECT_RETURN_CODES.count(rc)) {
+        if (RECONNECT_RETURN_CODES.count(rc)) {
+            std::this_thread::sleep_for(std::chrono::seconds(wait));
+            wait = std::min(wait * RECONNECT_WAIT_MULTIPLIER, RECONNECT_WAIT_MAX);
+        } else if (SUCCESS_RETURN_CODES.count(rc)) {
+            wait = RECONNECT_WAIT_SECONDS;
+        } else {
             return rc;
         }
-
-        std::this_thread::sleep_for(std::chrono::seconds(wait));
-        wait = std::min(wait * RECONNECT_WAIT_MULTIPLIER, RECONNECT_WAIT_MAX);
     }
 
     return 0;

@@ -1,11 +1,8 @@
 #pragma once
 
-#include <bits/stdint-intn.h>
 #include <chrono>
-#include <memory>
 #include <string>
 #include <future>
-#include <fstream>
 
 #include "bluetooth_client.h"
 #include "config.h"

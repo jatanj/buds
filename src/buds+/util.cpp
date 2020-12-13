@@ -1,10 +1,10 @@
-#include <iomanip>
-
 #include "util.h"
+
+#include <sstream>
+#include <iomanip>
 #include <wordexp.h>
 
-namespace buds {
-namespace util {
+namespace buds::util {
 
 std::string toHex(const std::vector<uint8_t>& bytes, bool spaced)
 {
@@ -30,6 +30,5 @@ std::string shellExpand(const std::string &s) {
   return expanded;
 }
 
-} // namespace util
-} // namespace buds
+} // namespace buds::util
 

@@ -1,13 +1,10 @@
 #include "bluetooth_client.h"
 
-#include <cstdio>
 #include <ostream>
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
-
 #include <fmt/core.h>
-#include <sys/types.h>
 
 #include "util.h"
 

@@ -4,7 +4,6 @@
 #include <array>
 #include <unistd.h>
 #include <cerrno>
-
 #include <fmt/core.h>
 
 #include "log.h"

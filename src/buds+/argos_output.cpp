@@ -5,10 +5,9 @@
 #include <ostream>
 #include <sstream>
 #include <sys/stat.h>
-
-#include <fmt/format.h>
 #include <unistd.h>
-#include "boost/algorithm/string/replace.hpp"
+#include <fmt/format.h>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "message.h"
 

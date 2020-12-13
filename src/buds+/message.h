@@ -1,12 +1,10 @@
 #pragma once
 
-#include <bits/stdint-uintn.h>
 #include <stdexcept>
 #include <cstdint>
 #include <sys/types.h>
 #include <vector>
 #include <optional>
-
 #include <fmt/format.h>
 
 #include "constants.h"
@@ -72,9 +70,11 @@ struct ManagerInfoData {
         NO = 2
     };
 
+    static constexpr auto VERSION_MARSHMALLOW = 23;
+
     ClientType clientType = ClientType::WEARABLE_APP;
     IsSamsungDevice isSamsungDevice = IsSamsungDevice::NO;
-    uint8_t androidSdk = 23; // Marshmallow
+    uint8_t androidSdk = VERSION_MARSHMALLOW;
 };
 
 struct ManagerInfoMessage : MessageT<MSG_ID_MANAGER_INFO> {

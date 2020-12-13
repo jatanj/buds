@@ -1,9 +1,10 @@
 #pragma once
 
 #include <string>
+#include <boost/algorithm/string.hpp>
+
 #include "log.h"
 #include "message.h"
-#include <boost/algorithm/string.hpp>
 
 namespace buds
 {

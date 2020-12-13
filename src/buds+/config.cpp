@@ -1,7 +1,8 @@
 #include "config.h"
-#include "util.h"
 
 #include <yaml-cpp/yaml.h>
+
+#include "util.h"
 
 namespace buds {
 

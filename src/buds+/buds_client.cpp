@@ -1,4 +1,5 @@
 #include "buds_client.h"
+#include "message.h"
 
 namespace buds {
 
@@ -60,6 +61,11 @@ void BudsClient::handle(Message* msg)
         handleStatusUpdate(status);
     } else if (auto* status = dynamic_cast<StatusUpdatedMessage*>(msg)) {
         handleStatusUpdate(status);
+    } else if (auto* version = dynamic_cast<VersionInfoMessage*>(msg)) {
+        if (version->data) {
+            LOG_INFO("{}", *version->data);
+        }
+        write(VersionInfoMessage{});
     }
     if (output_) {
         output_->render();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bits/stdint-uintn.h>
 #include <stdexcept>
 #include <cstdint>
 #include <sys/types.h>
@@ -9,6 +10,7 @@
 
 #include "constants.h"
 #include "log.h"
+#include "util.h"
 
 namespace buds {
 
@@ -90,6 +92,24 @@ public:
 
 private:
     const std::vector<uint8_t> payload_;
+};
+
+struct VersionInfoData {
+    std::array<uint8_t, 12> unknown;
+};
+
+struct VersionInfoMessage : MessageT<MSG_ID_VERSION_INFO, true> {
+public:
+    const std::optional<VersionInfoData> data;
+
+    explicit VersionInfoMessage(const std::optional<VersionInfoData>& data = std::nullopt) : data(data) {}
+
+    ~VersionInfoMessage() override = default;
+
+    std::vector<uint8_t> payload() const override
+    {
+        return {0};
+    }
 };
 
 struct PlacementParser {
@@ -194,7 +214,11 @@ FMT_FORMATTER(
     "StatusUpdateData{{"
     "deviceBatGageL={}, deviceBatGageR={}, twsStatus={}, "
     "mainConnection={}, placement={}}}",
-    value.deviceBatGageL, value.deviceBatGageR, value.twsStatus,
-    value.mainConnection, value.placement);
+    value.deviceBatGageL, value.deviceBatGageR, value.twsStatus, value.mainConnection, value.placement);
+
+FMT_FORMATTER(
+    buds::VersionInfoData,
+    "VersionInfoData{{data={}}}",
+    buds::util::toHex(std::vector(value.unknown.begin(), value.unknown.end())));
 
 } // namespace fmt

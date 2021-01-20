@@ -9,6 +9,7 @@ constexpr inline uint8_t MSG_POSTAMBLE = 0xdd;
 
 constexpr inline uint8_t MSG_ID_STATUS_UPDATED = 96;
 constexpr inline uint8_t MSG_ID_EXTENDED_STATUS_UPDATED = 97;
+constexpr inline uint8_t MSG_ID_VERSION_INFO = 99;
 constexpr inline uint8_t MSG_ID_MAIN_CHANGE = 112;
 constexpr inline uint8_t MSG_ID_MANAGER_INFO = 136;
 constexpr inline uint8_t MSG_ID_LOCK_TOUCHPAD = 144;

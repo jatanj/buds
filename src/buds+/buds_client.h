@@ -44,15 +44,13 @@ public:
     void handle(Message* msg);
 
     template <typename T>
-    void handleStatusUpdate(T* status)
+    void handleStatusUpdate(T* msg)
     {
-        if (status->data) {
-            LOG_INFO("{}", *status->data);
+        if (msg->data) {
+            LOG_INFO("{}", *msg->data);
             if (output_) {
-                output_->update(*status->data);
+                output_->update(*msg->data);
             }
-        } else {
-            LOG_ERROR("Message has no data");
         }
 
         // Respond with one zero byte with the same message id.
@@ -64,7 +62,7 @@ public:
             write(ManagerInfoMessage{ManagerInfoData{}});
         }
 
-        if (config_.mainEarbud && *config_.mainEarbud != status->data->mainConnection) {
+        if (config_.mainEarbud && *config_.mainEarbud != msg->data->mainConnection) {
             changeMainEarbud(*config_.mainEarbud);
         }
     }

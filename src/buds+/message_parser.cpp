@@ -27,6 +27,8 @@ std::unique_ptr<buds::Message> MessageParser::parse()
             return parseMessage<ExtendedStatusUpdatedMessage, ExtendedStatusUpdatedData>(id);
         case MSG_ID_STATUS_UPDATED:
             return parseMessage<StatusUpdatedMessage, StatusUpdatedData>(id);
+        case MSG_ID_VERSION_INFO:
+            return parseMessage<VersionInfoMessage, VersionInfoData>(id);
         default:
             break;
     }

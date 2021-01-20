@@ -10,20 +10,20 @@ CLI::Option* addOption(CLI::App* cmd, ArgsMap* args, const std::string& name)
 }
 
 CliArgs parseArgs(std::vector<std::string> argv) {
-  CLI::App cli{PROGRAM_DESCRIPTION, PROGRAM_NAME};
-  ArgsMap args;
+    CLI::App cli{PROGRAM_DESCRIPTION, PROGRAM_NAME};
+    ArgsMap args;
 
-  addOption(&cli, &args, OPTION_CONFIG_FILE);
-  addOption(&cli, &args, OPTION_ADDRESS);
+    addOption(&cli, &args, OPTION_CONFIG_FILE);
+    addOption(&cli, &args, OPTION_ADDRESS);
 
-  cli.parse(std::move(argv));
+    cli.parse(std::move(argv));
 
-  ArgsConverter ex{args};
+    ArgsConverter ex{args};
 
-  CliArgs result{};
-  result.configFile = ex.string(OPTION_CONFIG_FILE);
-  result.address = ex.string(OPTION_ADDRESS);
-  return result;
+    CliArgs result{};
+    result.configFile = ex.string(OPTION_CONFIG_FILE);
+    result.address = ex.string(OPTION_ADDRESS);
+    return result;
 }
 
 } // namespace buds

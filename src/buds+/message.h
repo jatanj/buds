@@ -62,6 +62,23 @@ struct MainChangeMessage : MessageT<MSG_ID_MAIN_CHANGE> {
     std::vector<uint8_t> payload() const override { return {earbud}; }
 };
 
+enum EqualizerMode : uint8_t {
+    NORMAL = 0,
+    BASS_BOOST = 1,
+    SOFT = 2,
+    DYNAMIC = 3,
+    CLEAR = 4,
+    TREBLE_BOOST = 5
+};
+
+struct EqualizerMessage : MessageT<MSG_ID_EQUALIZER> {
+    EqualizerMode mode;
+
+    explicit EqualizerMessage(EqualizerMode mode) : mode(mode) {}
+
+    std::vector<uint8_t> payload() const override { return {mode}; }
+};
+
 struct ManagerInfoData {
     enum ClientType : uint8_t {
         WEARABLE_APP = 1

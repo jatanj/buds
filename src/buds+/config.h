@@ -29,6 +29,7 @@ struct Config {
     Output output;
     bool lockTouchpad = false;
     std::optional<buds::MainEarbud> mainEarbud;
+    std::optional<buds::EqualizerMode> equalizer;
 };
 
 Config parseConfig(const std::string &path);

@@ -1,5 +1,6 @@
 #include "buds_client.h"
 #include "message.h"
+#include <bits/stdint-uintn.h>
 
 namespace buds {
 
@@ -21,6 +22,10 @@ int BudsClient::connect()
         changeMainEarbud(*config_.mainEarbud);
     }
 
+    if (config_.equalizer) {
+        changeEqualizerMode(*config_.equalizer);
+    }
+
     readTask_.wait_for(std::chrono::hours::max());
     return readTask_.get();
 }
@@ -40,6 +45,12 @@ void BudsClient::changeMainEarbud(MainEarbud earbud)
 {
     LOG_INFO("changeMainEarbud({})", static_cast<uint8_t>(earbud));
     write(MainChangeMessage{earbud});
+}
+
+void BudsClient::changeEqualizerMode(EqualizerMode mode)
+{
+    LOG_INFO("changeEqualizerMode({})", static_cast<uint8_t>(mode));
+    write(EqualizerMessage{mode});
 }
 
 void BudsClient::read(const std::vector<uint8_t>& msg)

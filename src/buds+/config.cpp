@@ -1,7 +1,9 @@
 #include "config.h"
 
+#include <optional>
 #include <yaml-cpp/yaml.h>
 
+#include "message.h"
 #include "util.h"
 
 namespace buds {
@@ -18,9 +20,17 @@ constexpr inline auto KEY_OUTPUT_TYPE = "type";
 constexpr inline auto KEY_OUTPUT_FILE = "file";
 constexpr inline auto KEY_LOCK_TOUCHPAD = "lock_touchpad";
 constexpr inline auto KEY_MAIN_EARBUD = "main_earbud";
+constexpr inline auto KEY_EQUALIZER = "equalizer";
 
 constexpr inline auto EARBUD_LEFT = "left";
 constexpr inline auto EARBUD_RIGHT = "right";
+
+constexpr inline auto EQUALIZER_NORMAL = "normal";
+constexpr inline auto EQUALIZER_BASS_BOOST = "bass_boost";
+constexpr inline auto EQUALIZER_SOFT = "soft";
+constexpr inline auto EQUALIZER_DYNAMIC = "dynamic";
+constexpr inline auto EQUALIZER_CLEAR = "clear";
+constexpr inline auto EQUALIZER_TREBLE_BOOST = "treble_boost";
 
 constexpr inline auto OUTPUT_ARGOS = "argos";
 
@@ -41,6 +51,30 @@ std::optional<MainEarbud> parseMainEarbud(const std::string& str)
         return MainEarbud::RIGHT;
     }
     LOG_ERROR("Invalid main earbud config '{}'", str);
+    return std::nullopt;
+}
+
+std::optional<EqualizerMode> parseEqualizer(const std::string& str)
+{
+    auto s = toLowerTrim(str);
+    if (s == EQUALIZER_NORMAL) {
+        return EqualizerMode::NORMAL;
+    }
+    if (s == EQUALIZER_BASS_BOOST) {
+        return EqualizerMode::BASS_BOOST;
+    }
+    if (s == EQUALIZER_SOFT) {
+        return EqualizerMode::SOFT;
+    }
+    if (s == EQUALIZER_DYNAMIC) {
+        return EqualizerMode::DYNAMIC;
+    }
+    if (s == EQUALIZER_CLEAR) {
+        return EqualizerMode::CLEAR;
+    }
+    if (s == EQUALIZER_TREBLE_BOOST) {
+        return EqualizerMode::TREBLE_BOOST;
+    }
     return std::nullopt;
 }
 
@@ -83,6 +117,9 @@ Config parseConfig(const std::string &path)
     }
     if (auto mainEarbud = config[KEY_BUDS][KEY_MAIN_EARBUD]) {
         result.mainEarbud = parseMainEarbud(mainEarbud.as<std::string>());
+    }
+    if (auto equalizer = config[KEY_BUDS][KEY_EQUALIZER]) {
+        result.equalizer = parseEqualizer(equalizer.as<std::string>());
     }
 
     return result;

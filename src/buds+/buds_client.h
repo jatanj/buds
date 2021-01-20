@@ -16,18 +16,33 @@ namespace buds {
 
 using namespace constants;
 
-class BudsClient {
+class BudsPlusCapabilities {
+public:
+    virtual ~BudsPlusCapabilities() = default;
+
+    virtual void lockTouchpad(bool enabled) = 0;
+
+    virtual void changeMainEarbud(MainEarbud earbud) = 0;
+
+    virtual void changeEqualizerMode(EqualizerMode mode) = 0;
+};
+
+class BudsClient : BudsPlusCapabilities {
 public:
     BudsClient(Config config, std::shared_ptr<Output> output) :
         config_(std::move(config)), output_(std::move(output)) {}
+
+    ~BudsClient() override = default;
 
     int connect();
 
     int close();
 
-    void lockTouchpad(bool enabled);
+    void lockTouchpad(bool enabled) override;
 
-    void changeMainEarbud(MainEarbud earbud);
+    void changeMainEarbud(MainEarbud earbud) override;
+
+    void changeEqualizerMode(EqualizerMode mode) override;
 
   private:
     const Config config_;

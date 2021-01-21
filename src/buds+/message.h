@@ -34,6 +34,15 @@ class MessageT : public Message {
 public:
     ~MessageT() override = default;
 
+    std::vector<uint8_t> payload() const override
+    {
+        if constexpr (IsResponse) {
+            throw std::runtime_error("Attempted to call payload on response message");
+        } else {
+            throw std::runtime_error("Payload is not implemented");
+        }
+    }
+
     uint8_t id() const override { return Id; }
 
     bool isResponse() const override { return IsResponse; }
@@ -46,7 +55,7 @@ struct LockTouchpadMessage : MessageT<MSG_ID_LOCK_TOUCHPAD> {
 
     ~LockTouchpadMessage() override = default;
 
-   std::vector<uint8_t> payload() const override { return {static_cast<uint8_t>(enabled)}; }
+    std::vector<uint8_t> payload() const override { return {static_cast<uint8_t>(enabled)}; }
 };
 
 enum MainEarbud : uint8_t {
@@ -77,6 +86,40 @@ struct EqualizerMessage : MessageT<MSG_ID_EQUALIZER> {
     explicit EqualizerMessage(EqualizerMode mode) : mode(mode) {}
 
     std::vector<uint8_t> payload() const override { return {mode}; }
+};
+
+enum TouchpadPredefinedAction : uint8_t {
+    UNUSED = 0,
+    VOICE_ASSISTANT = 1,
+    VOLUME = 2,
+    AMBIENT_SOUND = 3,
+    SPOTIFY = 4
+};
+
+struct TouchpadActions {
+    uint8_t left = TouchpadPredefinedAction::UNUSED;
+    uint8_t right = TouchpadPredefinedAction::UNUSED;
+};
+
+struct TouchpadOptionMessage : MessageT<MSG_ID_SET_TOUCHPAD_OPTION> {
+    TouchpadActions actions;
+
+    explicit TouchpadOptionMessage(TouchpadActions actions) : actions(actions) {}
+
+    std::vector<uint8_t> payload() const override
+    {
+        return {actions.left, actions.right};
+    }
+};
+
+struct TouchpadOtherOptionData {
+    uint8_t action;
+};
+
+struct TouchpadOtherOptionMessage : MessageT<MSG_ID_SET_TOUCHPAD_OTHER_OPTION> {
+    TouchpadOtherOptionData data;
+
+    explicit TouchpadOtherOptionMessage(TouchpadOtherOptionData data) : data(data) {}
 };
 
 struct ManagerInfoData {
@@ -237,5 +280,10 @@ FMT_FORMATTER(
     buds::VersionInfoData,
     "VersionInfoData{{data={}}}",
     buds::util::toHex(std::vector(value.unknown.begin(), value.unknown.end())));
+
+FMT_FORMATTER(
+    buds::TouchpadOtherOptionData,
+    "TouchpadOtherActionData{{action={}}}",
+    value.action);
 
 } // namespace fmt

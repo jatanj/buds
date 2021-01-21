@@ -25,6 +25,8 @@ public:
     virtual void changeMainEarbud(MainEarbud earbud) = 0;
 
     virtual void changeEqualizerMode(EqualizerMode mode) = 0;
+
+    virtual void setTouchpadOption(TouchpadActions actions) = 0;
 };
 
 class BudsClient : BudsPlusCapabilities {
@@ -44,6 +46,8 @@ public:
 
     void changeEqualizerMode(EqualizerMode mode) override;
 
+    void setTouchpadOption(TouchpadActions actions) override;
+
   private:
     const Config config_;
     const std::shared_ptr<Output> output_;
@@ -51,6 +55,7 @@ public:
 
     BluetoothClient btClient_;
     std::future<int> readTask_;
+    std::unordered_map<uint8_t, std::function<void(void)>> touchpadActions_;
 
     void read(const std::vector<uint8_t>& msg);
 
@@ -82,6 +87,7 @@ public:
         }
     }
 
+    void configureTouchpadActions(const Config::TouchpadActions& actions);
 };
 
 } // namespace buds

@@ -91,7 +91,7 @@ std::shared_ptr<buds::Output> initOutput(const buds::Config& config)
             LOG_INFO("Outputting to file '{}'", config.output.file);
         }
         switch (*config.output.type) {
-            case buds::ARGOS:
+            case buds::Config::ARGOS:
                 if (!config.output.file.empty()) {
                     output = std::make_shared<buds::ArgosOutput>(config.output.file);
                 } else {

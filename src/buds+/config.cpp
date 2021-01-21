@@ -21,6 +21,11 @@ constexpr inline auto KEY_OUTPUT_FILE = "file";
 constexpr inline auto KEY_LOCK_TOUCHPAD = "lock_touchpad";
 constexpr inline auto KEY_MAIN_EARBUD = "main_earbud";
 constexpr inline auto KEY_EQUALIZER = "equalizer";
+constexpr inline auto KEY_TOUCHPAD_ACTION = "touchpad_action";
+constexpr inline auto KEY_TOUCHPAD_LEFT = "left";
+constexpr inline auto KEY_TOUCHPAD_RIGHT = "right";
+constexpr inline auto KEY_TOUCHPAD_ACTION_CUSTOM = "custom";
+constexpr inline auto KEY_TOUCHPAD_CUSTOM_BASH_COMMAND = "command";
 
 constexpr inline auto EARBUD_LEFT = "left";
 constexpr inline auto EARBUD_RIGHT = "right";
@@ -31,6 +36,12 @@ constexpr inline auto EQUALIZER_SOFT = "soft";
 constexpr inline auto EQUALIZER_DYNAMIC = "dynamic";
 constexpr inline auto EQUALIZER_CLEAR = "clear";
 constexpr inline auto EQUALIZER_TREBLE_BOOST = "treble_boost";
+
+constexpr inline auto TOUCHPAD_ACTION_VOICE_ASSISTANT = "voice_assistant";
+constexpr inline auto TOUCHPAD_ACTION_VOLUME = "volume";
+constexpr inline auto TOUCHPAD_ACTION_AMBIENT_SOUND = "ambient_sound";
+constexpr inline auto TOUCHPAD_ACTION_SPOTIFY = "spotify";
+constexpr inline auto TOUCHPAD_CUSTOM_BASH = "bash";
 
 constexpr inline auto OUTPUT_ARGOS = "argos";
 
@@ -75,16 +86,53 @@ std::optional<EqualizerMode> parseEqualizer(const std::string& str)
     if (s == EQUALIZER_TREBLE_BOOST) {
         return EqualizerMode::TREBLE_BOOST;
     }
+    LOG_ERROR("Invalid equalizer mode '{}'", str);
     return std::nullopt;
 }
 
-std::optional<OutputConfig> parseOutputType(const std::string& str)
+std::optional<Config::OutputConfig> parseOutputType(const std::string& str)
 {
     auto s = toLowerTrim(str);
     if (s == OUTPUT_ARGOS) {
-        return OutputConfig::ARGOS;
+        return Config::OutputConfig::ARGOS;
     }
     LOG_ERROR("Invalid output config '{}'", str);
+    return std::nullopt;
+}
+
+std::optional<TouchpadPredefinedAction> parseTouchpadPredefinedAction(const std::string& str)
+{
+    auto s = toLowerTrim(str);
+    if (s == TOUCHPAD_ACTION_VOICE_ASSISTANT) {
+        return TouchpadPredefinedAction::VOICE_ASSISTANT;
+    }
+    if (s == TOUCHPAD_ACTION_VOLUME) {
+        return TouchpadPredefinedAction::VOLUME;
+    }
+    if (s == TOUCHPAD_ACTION_AMBIENT_SOUND) {
+        return TouchpadPredefinedAction::AMBIENT_SOUND;
+    }
+    if (s == TOUCHPAD_ACTION_SPOTIFY) {
+        return TouchpadPredefinedAction::SPOTIFY;
+    }
+    LOG_ERROR("Invalid touchpad action '{}'", str);
+    return std::nullopt;
+}
+
+std::optional<Config::TouchpadAction> parseTouchpadAction(const YAML::Node& node)
+{
+    if (node.IsScalar()) {
+        return parseTouchpadPredefinedAction(node.as<std::string>());
+    }
+    if (auto custom = node[KEY_TOUCHPAD_ACTION_CUSTOM]) {
+        auto customValue = custom.as<std::string>();
+        if (customValue == TOUCHPAD_CUSTOM_BASH) {
+            if (auto command = node[KEY_TOUCHPAD_CUSTOM_BASH_COMMAND]) {
+                return Config::BashAction{command.as<std::string>()};
+            }
+        }
+    }
+    LOG_ERROR("Failed to parse touchpad action");
     return std::nullopt;
 }
 
@@ -120,6 +168,14 @@ Config parseConfig(const std::string &path)
     }
     if (auto equalizer = config[KEY_BUDS][KEY_EQUALIZER]) {
         result.equalizer = parseEqualizer(equalizer.as<std::string>());
+    }
+    if (auto touchpadAction = config[KEY_BUDS][KEY_TOUCHPAD_ACTION]) {
+        if (auto left = touchpadAction[KEY_TOUCHPAD_LEFT]) {
+            result.touchpadAction.left = parseTouchpadAction(left);
+        }
+        if (auto right = touchpadAction[KEY_TOUCHPAD_RIGHT]) {
+            result.touchpadAction.right = parseTouchpadAction(right);
+        }
     }
 
     return result;

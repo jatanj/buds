@@ -14,6 +14,8 @@ constexpr inline uint8_t MSG_ID_MAIN_CHANGE = 112;
 constexpr inline uint8_t MSG_ID_EQUALIZER = 134;
 constexpr inline uint8_t MSG_ID_MANAGER_INFO = 136;
 constexpr inline uint8_t MSG_ID_LOCK_TOUCHPAD = 144;
+constexpr inline uint8_t MSG_ID_SET_TOUCHPAD_OPTION = 146;
+constexpr inline uint8_t MSG_ID_SET_TOUCHPAD_OTHER_OPTION = 147;
 
 constexpr inline uint8_t SIZE_PREAMBLE = 1;
 constexpr inline uint8_t SIZE_POSTAMBLE = 1;

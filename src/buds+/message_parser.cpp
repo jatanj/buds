@@ -29,6 +29,8 @@ std::unique_ptr<buds::Message> MessageParser::parse()
             return parseMessage<StatusUpdatedMessage, StatusUpdatedData>(id);
         case MSG_ID_VERSION_INFO:
             return parseMessage<VersionInfoMessage, VersionInfoData>(id);
+        case MSG_ID_SET_TOUCHPAD_OTHER_OPTION:
+            return parseMessage<TouchpadOtherOptionMessage, TouchpadOtherOptionData>(id);
         default:
             break;
     }

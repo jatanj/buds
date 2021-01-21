@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <variant>
 #include <boost/algorithm/string.hpp>
 
 #include "log.h"
@@ -9,27 +10,34 @@
 namespace buds
 {
 
-enum OutputConfig {
-    ARGOS
-};
-
 struct Config {
     struct Command {
         std::string connect;
         std::string reconnect;
-    };
+    } command;
 
+    std::string address;
+
+    enum OutputConfig {
+        ARGOS
+    };
     struct Output {
         std::optional<OutputConfig> type;
         std::string file;
-    };
+    } output;
 
-    Command command;
-    std::string address;
-    Output output;
     bool lockTouchpad = false;
     std::optional<buds::MainEarbud> mainEarbud;
     std::optional<buds::EqualizerMode> equalizer;
+
+    struct BashAction {
+        std::string command;
+    };
+    using TouchpadAction = std::variant<TouchpadPredefinedAction, BashAction>;
+    struct TouchpadActions {
+        std::optional<TouchpadAction> left;
+        std::optional<TouchpadAction> right;
+    } touchpadAction;
 };
 
 Config parseConfig(const std::string &path);

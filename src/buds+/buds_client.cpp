@@ -1,6 +1,8 @@
 #include "buds_client.h"
+
+#include <cstdlib>
+#include <variant>
 #include "message.h"
-#include <bits/stdint-uintn.h>
 
 namespace buds {
 
@@ -25,6 +27,8 @@ int BudsClient::connect()
     if (config_.equalizer) {
         changeEqualizerMode(*config_.equalizer);
     }
+
+    configureTouchpadActions(config_.touchpadAction);
 
     readTask_.wait_for(std::chrono::hours::max());
     return readTask_.get();
@@ -53,6 +57,12 @@ void BudsClient::changeEqualizerMode(EqualizerMode mode)
     write(EqualizerMessage{mode});
 }
 
+void BudsClient::setTouchpadOption(TouchpadActions actions)
+{
+    LOG_INFO("setTouchpadOption({}, {})", actions.left, actions.right);
+    write(TouchpadOptionMessage{actions});
+}
+
 void BudsClient::read(const std::vector<uint8_t>& msg)
 {
     MessageParser parser{msg};
@@ -68,19 +78,56 @@ void BudsClient::write(const Message& msg)
 
 void BudsClient::handle(Message* msg)
 {
-    if (auto *status = dynamic_cast<ExtendedStatusUpdatedMessage*>(msg)) {
-        handleStatusUpdate(status);
-    } else if (auto* status = dynamic_cast<StatusUpdatedMessage*>(msg)) {
-        handleStatusUpdate(status);
-    } else if (auto* version = dynamic_cast<VersionInfoMessage*>(msg)) {
-        if (version->data) {
-            LOG_INFO("{}", *version->data);
+    if (auto *m = dynamic_cast<ExtendedStatusUpdatedMessage*>(msg)) {
+        handleStatusUpdate(m);
+    } else if (auto* m = dynamic_cast<StatusUpdatedMessage*>(msg)) {
+        handleStatusUpdate(m);
+    } else if (auto* m = dynamic_cast<VersionInfoMessage*>(msg)) {
+        if (m->data) {
+            LOG_INFO("{}", *m->data);
         }
         write(VersionInfoMessage{});
+    } else if (auto* m = dynamic_cast<TouchpadOtherOptionMessage*>(msg)) {
+        LOG_INFO("{}", m->data);
+        if (auto it = touchpadActions_.find(m->data.action); it != touchpadActions_.end()) {
+            it->second();
+        }
     }
     if (output_) {
         output_->render();
     }
+}
+
+void BudsClient::configureTouchpadActions(const Config::TouchpadActions& actions)
+{
+    static constexpr uint8_t LEFT_ID = 200;
+    static constexpr uint8_t RIGHT_ID = 201;
+
+    TouchpadActions request{};
+
+    auto configure = [this](const Config::TouchpadAction& action, uint8_t id) -> std::optional<uint8_t> {
+        if (const auto* custom = std::get_if<Config::BashAction>(&action)) {
+            LOG_INFO("Registering bash touchpad action {} => {}", id, custom->command);
+            touchpadActions_.insert_or_assign(id, [c = custom->command]() {
+                system(c.c_str()); // NOLINT
+            });
+            return id;
+        }
+        return std::nullopt;
+    };
+
+    if (actions.left) {
+        if (auto id = configure(*actions.left, LEFT_ID)) {
+            request.left = *id;
+        }
+    }
+    if (actions.right) {
+        if (auto id = configure(*actions.right, RIGHT_ID)) {
+            request.right = *id;
+        }
+    }
+
+    setTouchpadOption(request);
 }
 
 } // namespace buds

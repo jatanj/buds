@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <optional>
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 
 #include "galaxy-buds-rfcomm-crc16-ccitt.h"
 #include "constants.h"

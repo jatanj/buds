@@ -103,18 +103,19 @@ void BudsClient::configureTouchpadActions(const Config::TouchpadActions& actions
     static constexpr uint8_t LEFT_ID = 200;
     static constexpr uint8_t RIGHT_ID = 201;
 
-    TouchpadActions request{};
-
-    auto configure = [this](const Config::TouchpadAction& action, uint8_t id) -> std::optional<uint8_t> {
+    static auto configure = [this](const Config::TouchpadAction& action, uint8_t id) -> std::optional<uint8_t> {
         if (const auto* custom = std::get_if<Config::BashAction>(&action)) {
             LOG_INFO("Registering bash touchpad action {} => {}", id, custom->command);
             touchpadActions_.insert_or_assign(id, [c = custom->command]() {
+                // FIXME: Avoid using system()
                 system(c.c_str()); // NOLINT
             });
             return id;
         }
         return std::nullopt;
     };
+
+    TouchpadActions request{};
 
     if (actions.left) {
         if (auto id = configure(*actions.left, LEFT_ID)) {

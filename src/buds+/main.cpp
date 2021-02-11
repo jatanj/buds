@@ -114,10 +114,19 @@ int main(int argc, char** argv)
     auto config = loadConfig(args);
     auto output = initOutput(config);
 
+    if (config.command.connect.empty()) {
+        LOG_ERROR("Connect command is required");
+        LOG_ERROR("Ensure your config is readable and the buds+.command.connect property is set.");
+        return 1;
+    }
+
     buds::BudsClient buds{config, std::move(output)};
 
     reconnectData.buds = &buds;
     reconnectData.command = config.command.reconnect;
+    if (reconnectData.command.empty()) {
+        reconnectData.command = config.command.connect;
+    }
     signal(SIGHUP, handleReconnect);
 
     int wait = RECONNECT_WAIT_SECONDS;
@@ -136,7 +145,5 @@ int main(int argc, char** argv)
             return rc;
         }
     }
-
-    return 0;
 }
 

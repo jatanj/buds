@@ -64,7 +64,7 @@ std::optional<uint8_t> ArgosOutput::batteryInfo(const BudsTrayInfo& info)
 
 std::string ArgosOutput::wearStatusInfo(const BudsTrayInfo& info)
 {
-    auto indicator = [](PlacementParser::Placement status) {
+    static auto indicator = [](PlacementParser::Placement status) {
         switch (status) {
             case PlacementParser::Placement::IN_EAR: return IN_EAR_EMOJI;
             case PlacementParser::Placement::OUTSIDE_EAR: return OUTSIDE_EAR_EMOJI;

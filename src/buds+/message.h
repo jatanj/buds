@@ -91,8 +91,8 @@ struct EqualizerMessage : MessageT<MSG_ID_EQUALIZER> {
 enum TouchpadPredefinedAction : uint8_t {
     UNUSED = 0,
     VOICE_ASSISTANT = 1,
-    VOLUME = 2,
-    AMBIENT_SOUND = 3,
+    AMBIENT_SOUND = 2,
+    VOLUME = 3,
     SPOTIFY = 4
 };
 

@@ -112,6 +112,9 @@ void BudsClient::configureTouchpadActions(const Config::TouchpadActions& actions
             });
             return id;
         }
+        if (const auto* predefined = std::get_if<TouchpadPredefinedAction>(&action)) {
+            return *predefined;
+        }
         return std::nullopt;
     };
 

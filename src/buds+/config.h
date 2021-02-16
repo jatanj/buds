@@ -7,8 +7,7 @@
 #include "log.h"
 #include "message.h"
 
-namespace buds
-{
+namespace buds {
 
 struct Config {
     struct Command {
@@ -40,11 +39,26 @@ struct Config {
     } touchpadAction;
 };
 
-Config parseConfig(const std::string &path);
+Config parseConfig(const std::string& path);
 
 } // namespace buds
 
-namespace fmt {
+namespace fmt
+{
+
+inline std::string toString(const std::optional<buds::Config::TouchpadAction>& action)
+{
+    if (!action) {
+        return "<none>";
+    }
+    if (const auto* custom = std::get_if<buds::Config::BashAction>(&*action)) {
+        return fmt::format("custom:{}", custom->command);
+    } else if (const auto* custom = std::get_if<buds::TouchpadPredefinedAction>(&*action)) {
+        return fmt::format("predefined:{}", *custom);
+    } else {
+        return "<unknown>";
+    }
+}
 
 FMT_FORMATTER(
     buds::Config,
@@ -53,12 +67,14 @@ FMT_FORMATTER(
     "address={}, "
     "output={{type={}, file={}}}, "
     "lockTouchpad={}, "
-    "mainEarbud={}"
+    "mainEarbud={}, "
+    "touchpadAction={{left={}, right={}}}"
     "}}",
     value.command.connect, value.command.reconnect,
     value.address,
     value.output.type, value.output.file,
     value.lockTouchpad,
-    value.mainEarbud);
+    value.mainEarbud,
+    toString(value.touchpadAction.left), toString(value.touchpadAction.right));
 
 } // namespace fmt

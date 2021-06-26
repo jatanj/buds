@@ -101,24 +101,52 @@ void ArgosOutput::render()
     ofs << buildScript();
 }
 
+std::string batteryLine(const std::optional<uint8_t>& battery)
+{
+    auto s = fmt::format(
+        "{} {}",
+        HEADPHONES_EMOJI,
+        battery ? fmt::format("{}% ", *battery) : "");
+    s += '\n';
+    return s;
+}
+
+std::string buildBashOptionLine(const std::string& name, const std::string& icon, const std::string& cmd)
+{
+    std::string s;
+    s.reserve(128); // NOLINT
+    s += fmt::format("{} | iconName={} ", name, icon);
+    s += fmt::format("bash='{}' ", cmd);
+    s += "terminal=false\n";
+    return s;
+}
+
+std::string connectOptionLine(int pid)
+{
+    return buildBashOptionLine("Connect", "call-start", fmt::format("kill -SIGCONT {}", pid));
+}
+
+std::string disconnectOptionLine(int pid)
+{
+    return buildBashOptionLine("Disconnect", "call-stop", fmt::format("kill -SIGTSTP {}", pid));
+}
+
+std::string restartOptionLine(int pid)
+{
+    return buildBashOptionLine("Reconnect", "view-refresh", fmt::format("kill -SIGHUP {}", pid));
+}
+
 std::string ArgosOutput::buildScript() const
 {
-    auto battery = batteryInfo(info_);
     auto pid = getpid();
 
     std::stringstream ss;
-    ss << fmt::format(
-        "{} {}",
-        HEADPHONES_EMOJI,
-        battery ? fmt::format("{}% ", *battery) : "")
-        << std::endl
-        << std::endl;
+    ss << batteryLine(batteryInfo(info_));
+    ss << std::endl;
     ss << "---" << std::endl;
-    ss << "Restart | "
-       << "iconName=view-refresh "
-       << fmt::format("bash='kill -HUP {}' ", pid)
-       << "terminal=false"
-       << std::endl;
+    ss << connectOptionLine(pid);
+    ss << disconnectOptionLine(pid);
+    ss << restartOptionLine(pid);
     return ss.str();
 }
 

@@ -1,4 +1,5 @@
 #include <chrono>
+#include <thread>
 #include <filesystem>
 #include <memory>
 #include <unordered_set>
@@ -21,45 +22,54 @@ constexpr auto RECONNECT_WAIT_MAX = 60;
 const std::unordered_set<int> RECONNECT_RETURN_CODES{ // NOLINT
     ECONNABORTED
 };
-const std::unordered_set<int> SUCCESS_RETURN_CODES{ // NOLINT
+const std::unordered_set<int> SUCCESS_RETURN_CODES{// NOLINT
     0
 };
 
-int doConnectCommand(const buds::Config& config)
+int shellCommand(const std::string& cmd)
 {
-    if (config.command.connect.empty()) {
-        return 0;
+    if (cmd.empty()) {
+        LOG_WARN("Cannot run empty command");
+        return 1;
     }
     // FIXME: Avoid using system()
-    return system(config.command.connect.c_str()); // NOLINT
+    return system(cmd.c_str()); // NOLINT
 }
 
-struct ReconnectData {
-    buds::BudsClient* buds = nullptr;
-    std::string command;
-} reconnectData; // NOLINT
-
-void handleReconnect(int signum)
+int connect(const buds::Config& config)
 {
-    boost::algorithm::trim(reconnectData.command);
-    if (!reconnectData.buds || reconnectData.command.empty()) {
-        return;
-    }
+    return shellCommand(config.command.connect);
+}
 
-    if (auto error = reconnectData.buds->close()) {
+struct SignalData {
+    buds::BudsClient* buds = nullptr;
+    buds::Config* config = nullptr;
+    bool stopped = false;
+} signalData; // NOLINT
+
+void handleStop(int /*unused*/ = SIGTSTP)
+{
+    if (auto error = signalData.buds->close()) {
         LOG_ERROR("Cannot reconnect (failed to close connection : {})", error);
         return;
     }
+    signalData.stopped = shellCommand(signalData.config->command.disconnect) == 0;
+}
 
-    switch (signum) {
-        case SIGHUP:
-            // FIXME: Avoid using system()
-            system(reconnectData.command.c_str()); // NOLINT
-            break;
-        default:
-            LOG_WARN("Sigal {} not handled", signum);
-            break;
-    }
+void handleContinue(int /*unused*/ = SIGCONT)
+{
+    signalData.stopped = shellCommand(signalData.config->command.connect) != 0;
+}
+
+void handleRestart(int /*unused*/ = SIGHUP)
+{
+    handleStop();
+
+    // Bluetoothctl seems to return before the buds are 'fully' disconnected
+    // so we just wait one second as a minor hack.
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    handleContinue();
 }
 
 std::filesystem::path defaultConfig()
@@ -122,20 +132,24 @@ int main(int argc, char** argv)
 
     buds::BudsClient buds{config, std::move(output)};
 
-    reconnectData.buds = &buds;
-    reconnectData.command = config.command.reconnect;
-    if (reconnectData.command.empty()) {
-        reconnectData.command = config.command.connect;
-    }
-    signal(SIGHUP, handleReconnect);
+    signalData.buds = &buds;
+    signalData.config = &config;
+    signal(SIGHUP, handleRestart);
+    signal(SIGTSTP, handleStop);
+    signal(SIGCONT, handleContinue);
 
     int wait = RECONNECT_WAIT_SECONDS;
     while (true) {
-        if (auto rc = doConnectCommand(config)) {
+        if (signalData.stopped) {
+            std::this_thread::sleep_for(std::chrono::seconds(RECONNECT_WAIT_SECONDS));
+            continue;
+        }
+
+        if (auto rc = connect(config)) {
             LOG_ERROR("Connect command failed with code {}", rc);
         }
 
-        auto rc = buds.connect();
+        auto rc = buds.blockingConnect();
         if (RECONNECT_RETURN_CODES.count(rc)) {
             std::this_thread::sleep_for(std::chrono::seconds(wait));
             wait = std::min(wait * RECONNECT_WAIT_MULTIPLIER, RECONNECT_WAIT_MAX);

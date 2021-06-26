@@ -13,7 +13,7 @@ namespace buds {
 constexpr inline auto KEY_BUDS = "buds+";
 constexpr inline auto KEY_COMMAND = "command";
 constexpr inline auto KEY_CONNECT = "connect";
-constexpr inline auto KEY_RECONNECT = "reconnect";
+constexpr inline auto KEY_DISCONNECT = "disconnect";
 constexpr inline auto KEY_ADDRESS = "address";
 constexpr inline auto KEY_OUTPUT = "output";
 constexpr inline auto KEY_OUTPUT_TYPE = "type";
@@ -146,10 +146,10 @@ Config parseConfig(const std::string &path)
     }
 
     if (auto connect = config[KEY_BUDS][KEY_COMMAND][KEY_CONNECT]) {
-        result.command.connect = connect.as<std::string>();
+        result.command.connect = boost::trim_copy(connect.as<std::string>());
     }
-    if (auto reconnect = config[KEY_BUDS][KEY_COMMAND][KEY_RECONNECT]) {
-        result.command.reconnect = reconnect.as<std::string>();
+    if (auto disconnect = config[KEY_BUDS][KEY_COMMAND][KEY_DISCONNECT]) {
+        result.command.disconnect = boost::trim_copy(disconnect.as<std::string>());
     }
     if (auto address = config[KEY_BUDS][KEY_ADDRESS]) {
         result.address = address.as<std::string>();

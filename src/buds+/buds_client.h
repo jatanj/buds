@@ -38,6 +38,8 @@ public:
 
     int connect();
 
+    int blockingConnect();
+
     int close();
 
     void lockTouchpad(bool enabled) override;

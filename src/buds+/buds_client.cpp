@@ -23,12 +23,20 @@ int BudsClient::connect()
     if (config_.mainEarbud) {
         changeMainEarbud(*config_.mainEarbud);
     }
-
     if (config_.equalizer) {
         changeEqualizerMode(*config_.equalizer);
     }
 
     configureTouchpadActions(config_.touchpadAction);
+
+    return 0;
+}
+
+int BudsClient::blockingConnect()
+{
+    if (auto error = connect()) {
+        return error;
+    }
 
     readTask_.wait_for(std::chrono::hours::max());
     return readTask_.get();

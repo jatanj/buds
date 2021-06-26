@@ -12,7 +12,7 @@ namespace buds {
 struct Config {
     struct Command {
         std::string connect;
-        std::string reconnect;
+        std::string disconnect;
     } command;
 
     std::string address;
@@ -53,24 +53,25 @@ inline std::string toString(const std::optional<buds::Config::TouchpadAction>& a
     }
     if (const auto* custom = std::get_if<buds::Config::BashAction>(&*action)) {
         return fmt::format("custom:{}", custom->command);
-    } else if (const auto* custom = std::get_if<buds::TouchpadPredefinedAction>(&*action)) {
-        return fmt::format("predefined:{}", *custom);
-    } else {
-        return "<unknown>";
     }
+    if (const auto* custom = std::get_if<buds::TouchpadPredefinedAction>(&*action)) {
+        return fmt::format("predefined:{}", *custom);
+    }
+    return "<unknown>";
+
 }
 
 FMT_FORMATTER(
     buds::Config,
     "Config{{"
-    "command={{connect={}, reconnect={}}}, "
+    "command={{connect={}, disconnect={}}}, "
     "address={}, "
     "output={{type={}, file={}}}, "
     "lockTouchpad={}, "
     "mainEarbud={}, "
     "touchpadAction={{left={}, right={}}}"
     "}}",
-    value.command.connect, value.command.reconnect,
+    value.command.connect, value.command.disconnect,
     value.address,
     value.output.type, value.output.file,
     value.lockTouchpad,

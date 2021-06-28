@@ -24,45 +24,50 @@ constexpr inline auto OUTPUT_FILE_TEMP_PREFIX = "/tmp/buds_";
 constexpr inline auto OUTPUT_FILE_SHEBANG = "#!/bin/bash";
 constexpr inline auto OUTPUT_FILE_PERMISSIONS = 0755;
 
+void ArgosOutput::update(const BudsState& state)
+{
+    state_.isConnected = state.isConnected;
+}
+
 void ArgosOutput::update(const StatusUpdatedData& data)
 {
     const std::lock_guard<std::mutex> lock(updateMutex_);
 
-    info_.leftBattery = data.deviceBatGageL;
-    info_.rightBattery = data.deviceBatGageR;
+    state_.leftBattery = data.deviceBatGageL;
+    state_.rightBattery = data.deviceBatGageR;
 
     PlacementParser placement{data.placement};
-    info_.leftPlacement = placement.left();
-    info_.rightPlacement = placement.right();
+    state_.leftPlacement = placement.left();
+    state_.rightPlacement = placement.right();
 }
 
 void ArgosOutput::update(const ExtendedStatusUpdatedData& data)
 {
     const std::lock_guard<std::mutex> lock(updateMutex_);
 
-    info_.leftBattery = data.deviceBatGageL;
-    info_.rightBattery = data.deviceBatGageR;
+    state_.leftBattery = data.deviceBatGageL;
+    state_.rightBattery = data.deviceBatGageR;
 
     PlacementParser placement{data.placement};
-    info_.leftPlacement = placement.left();
-    info_.rightPlacement = placement.right();
+    state_.leftPlacement = placement.left();
+    state_.rightPlacement = placement.right();
 }
 
-std::optional<uint8_t> ArgosOutput::batteryInfo(const BudsTrayInfo& info)
+std::optional<uint8_t> ArgosOutput::batteryInfo(const BudsTrayState& state)
 {
-    if (info.leftBattery && info.rightBattery) {
-        return std::min(*info.leftBattery, *info.rightBattery);
+    if (state.leftBattery && state.rightBattery) {
+        return std::min(*state.leftBattery, *state.rightBattery);
     }
-    if (info.leftBattery) {
-        return *info.leftBattery;
+    if (state.leftBattery) {
+        return *state.leftBattery;
     }
-    if (info.rightBattery) {
-        return *info.rightBattery;
+    if (state.rightBattery) {
+        return *state.rightBattery;
     }
     return std::nullopt;
 }
 
-std::string ArgosOutput::wearStatusInfo(const BudsTrayInfo& info)
+std::string ArgosOutput::wearStatusInfo(const BudsTrayState& state)
 {
     static auto indicator = [](PlacementParser::Placement status) {
         switch (status) {
@@ -73,13 +78,13 @@ std::string ArgosOutput::wearStatusInfo(const BudsTrayInfo& info)
         }
     };
     std::string s;
-    if (info.leftPlacement) {
-        s += indicator(*info.leftPlacement);
+    if (state.leftPlacement) {
+        s += indicator(*state.leftPlacement);
         s += "L";
     }
-    if (info.rightPlacement) {
+    if (state.rightPlacement) {
         s += "R";
-        s += indicator(*info.rightPlacement);
+        s += indicator(*state.rightPlacement);
     }
     return s;
 }
@@ -141,12 +146,16 @@ std::string ArgosOutput::buildScript() const
     auto pid = getpid();
 
     std::stringstream ss;
-    ss << batteryLine(batteryInfo(info_));
+    ss << batteryLine(batteryInfo(state_));
     ss << std::endl;
     ss << "---" << std::endl;
-    ss << connectOptionLine(pid);
-    ss << disconnectOptionLine(pid);
-    ss << restartOptionLine(pid);
+    if (!state_.isConnected) {
+        ss << connectOptionLine(pid);
+    }
+    if (state_.isConnected) {
+        ss << disconnectOptionLine(pid);
+        ss << restartOptionLine(pid);
+    }
     return ss.str();
 }
 

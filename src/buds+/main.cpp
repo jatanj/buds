@@ -19,12 +19,15 @@ constexpr auto DEFAULT_CONFIG_FILE = "default.yaml";
 constexpr auto RECONNECT_WAIT_SECONDS = 5;
 constexpr auto RECONNECT_WAIT_MULTIPLIER = 2;
 constexpr auto RECONNECT_WAIT_MAX = 60;
-const std::unordered_set<int> RECONNECT_RETURN_CODES{ // NOLINT
-    ECONNABORTED
-};
-const std::unordered_set<int> SUCCESS_RETURN_CODES{// NOLINT
-    0
-};
+
+const std::unordered_set<int> RECONNECT_RETURN_CODES{ECONNABORTED}; // NOLINT
+const std::unordered_set<int> SUCCESS_RETURN_CODES{0};              // NOLINT
+
+struct SignalData {
+    buds::BudsClient* buds = nullptr;
+    buds::Config* config = nullptr;
+    bool paused = false;
+} signalData; // NOLINT
 
 int shellCommand(const std::string& cmd)
 {
@@ -41,24 +44,18 @@ int connect(const buds::Config& config)
     return shellCommand(config.command.connect);
 }
 
-struct SignalData {
-    buds::BudsClient* buds = nullptr;
-    buds::Config* config = nullptr;
-    bool stopped = false;
-} signalData; // NOLINT
-
 void handleStop(int /*unused*/ = SIGTSTP)
 {
     if (auto error = signalData.buds->close()) {
         LOG_ERROR("Cannot reconnect (failed to close connection : {})", error);
         return;
     }
-    signalData.stopped = shellCommand(signalData.config->command.disconnect) == 0;
+    signalData.paused = shellCommand(signalData.config->command.disconnect) == 0;
 }
 
 void handleContinue(int /*unused*/ = SIGCONT)
 {
-    signalData.stopped = shellCommand(signalData.config->command.connect) != 0;
+    signalData.paused = shellCommand(signalData.config->command.connect) != 0;
 }
 
 void handleRestart(int /*unused*/ = SIGHUP)
@@ -134,13 +131,14 @@ int main(int argc, char** argv)
 
     signalData.buds = &buds;
     signalData.config = &config;
+
     signal(SIGHUP, handleRestart);
     signal(SIGTSTP, handleStop);
     signal(SIGCONT, handleContinue);
 
     int wait = RECONNECT_WAIT_SECONDS;
     while (true) {
-        if (signalData.stopped) {
+        if (signalData.paused) {
             std::this_thread::sleep_for(std::chrono::seconds(RECONNECT_WAIT_SECONDS));
             continue;
         }

@@ -24,8 +24,8 @@ constexpr inline auto KEY_EQUALIZER = "equalizer";
 constexpr inline auto KEY_TOUCHPAD_ACTION = "touchpad_action";
 constexpr inline auto KEY_TOUCHPAD_LEFT = "left";
 constexpr inline auto KEY_TOUCHPAD_RIGHT = "right";
-constexpr inline auto KEY_TOUCHPAD_ACTION_CUSTOM = "custom";
-constexpr inline auto KEY_TOUCHPAD_CUSTOM_BASH_COMMAND = "command";
+constexpr inline auto KEY_TOUCHPAD_ACTION_TYPE = "type";
+constexpr inline auto KEY_TOUCHPAD_TYPE_BASH_COMMAND = "command";
 
 constexpr inline auto EARBUD_LEFT = "left";
 constexpr inline auto EARBUD_RIGHT = "right";
@@ -41,7 +41,7 @@ constexpr inline auto TOUCHPAD_ACTION_VOICE_ASSISTANT = "voice_assistant";
 constexpr inline auto TOUCHPAD_ACTION_VOLUME = "volume";
 constexpr inline auto TOUCHPAD_ACTION_AMBIENT_SOUND = "ambient_sound";
 constexpr inline auto TOUCHPAD_ACTION_SPOTIFY = "spotify";
-constexpr inline auto TOUCHPAD_CUSTOM_BASH = "bash";
+constexpr inline auto TOUCHPAD_TYPE_BASH = "bash";
 
 constexpr inline auto OUTPUT_ARGOS = "argos";
 
@@ -124,10 +124,10 @@ std::optional<Config::TouchpadAction> parseTouchpadAction(const YAML::Node& node
     if (node.IsScalar()) {
         return parseTouchpadPredefinedAction(node.as<std::string>());
     }
-    if (auto custom = node[KEY_TOUCHPAD_ACTION_CUSTOM]) {
-        auto customValue = custom.as<std::string>();
-        if (customValue == TOUCHPAD_CUSTOM_BASH) {
-            if (auto command = node[KEY_TOUCHPAD_CUSTOM_BASH_COMMAND]) {
+    if (auto type = node[KEY_TOUCHPAD_ACTION_TYPE]) {
+        auto typeValue = type.as<std::string>();
+        if (typeValue == TOUCHPAD_TYPE_BASH) {
+            if (auto command = node[KEY_TOUCHPAD_TYPE_BASH_COMMAND]) {
                 return Config::BashAction{command.as<std::string>()};
             }
         }

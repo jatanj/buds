@@ -12,6 +12,10 @@ int BudsClient::connect()
         return error;
     }
 
+    if (output_) {
+        output_->update(buds::BudsState{true});
+    }
+
     readTask_ = std::async(std::launch::async, [this]{
         return btClient_.read([this](auto&& p) {
             read(std::forward<decltype(p)>(p));
@@ -44,7 +48,14 @@ int BudsClient::blockingConnect()
 
 int BudsClient::close()
 {
-    return btClient_.close();
+    auto error = btClient_.close();
+    if (!error) {
+        if (output_) {
+            output_->update(buds::BudsState{false});
+            output_->render();
+        }
+    }
+    return error;
 }
 
 void BudsClient::lockTouchpad(bool enabled)

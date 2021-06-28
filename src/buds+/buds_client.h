@@ -50,6 +50,8 @@ public:
 
     void setTouchpadOption(TouchpadActions actions) override;
 
+    Output& output() const { return *output_; }
+
   private:
     const Config config_;
     const std::shared_ptr<Output> output_;

@@ -2,11 +2,18 @@
 
 #include "message.h"
 
-namespace buds {
+namespace buds
+{
+
+struct BudsState {
+    bool isConnected;
+};
 
 class Output {
 public:
     virtual ~Output() = default;
+
+    virtual void update(const BudsState& state) = 0;
 
     virtual void update(const StatusUpdatedData& data) = 0;
 

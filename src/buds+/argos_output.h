@@ -41,9 +41,11 @@ private:
 
     std::string buildScript() const;
 
-    static std::optional<uint8_t> batteryInfo(const BudsTrayState& state);
+    std::optional<uint8_t> batteryPercent() const;
 
-    static std::string wearStatusInfo(const BudsTrayState& state);
+    std::string batteryEmoji() const;
+
+    std::string wearStatus() const;
 };
 
 } // namespace buds

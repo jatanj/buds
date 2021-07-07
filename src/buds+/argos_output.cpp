@@ -53,40 +53,28 @@ void ArgosOutput::update(const ExtendedStatusUpdatedData& data)
     state_.rightPlacement = placement.right();
 }
 
-std::optional<uint8_t> ArgosOutput::batteryInfo(const BudsTrayState& state)
+std::optional<uint8_t> ArgosOutput::batteryPercent() const
 {
-    if (state.leftBattery && state.rightBattery) {
-        return std::min(*state.leftBattery, *state.rightBattery);
+    if (state_.leftBattery && state_.rightBattery) {
+        return std::min(*state_.leftBattery, *state_.rightBattery);
     }
-    if (state.leftBattery) {
-        return *state.leftBattery;
+    if (state_.leftBattery) {
+        return *state_.leftBattery;
     }
-    if (state.rightBattery) {
-        return *state.rightBattery;
+    if (state_.rightBattery) {
+        return *state_.rightBattery;
     }
     return std::nullopt;
 }
 
-std::string ArgosOutput::wearStatusInfo(const BudsTrayState& state)
+std::string ArgosOutput::batteryEmoji() const
 {
-    static auto indicator = [](PlacementParser::Placement status) {
-        switch (status) {
-            case PlacementParser::Placement::IN_EAR: return IN_EAR_EMOJI;
-            case PlacementParser::Placement::OUTSIDE_EAR: return OUTSIDE_EAR_EMOJI;
-            case PlacementParser::Placement::IN_CASE: return IN_CASE_EMOJI;
-            default: return "";
-        }
-    };
-    std::string s;
-    if (state.leftPlacement) {
-        s += indicator(*state.leftPlacement);
-        s += "L";
+    constexpr auto IN_CASE =  PlacementParser::Placement::IN_CASE;
+    if (state_.leftPlacement && *state_.leftPlacement == IN_CASE &&
+        state_.rightPlacement && *state_.rightPlacement == IN_CASE) {
+        return IN_CASE_EMOJI;
     }
-    if (state.rightPlacement) {
-        s += "R";
-        s += indicator(*state.rightPlacement);
-    }
-    return s;
+    return HEADPHONES_EMOJI;
 }
 
 void ArgosOutput::render()
@@ -106,12 +94,16 @@ void ArgosOutput::render()
     ofs << buildScript();
 }
 
-std::string batteryLine(const std::optional<uint8_t>& battery)
+std::string batteryLine(const std::optional<uint8_t>& pct, const std::string& emoji)
 {
-    auto s = fmt::format(
-        "{} {}",
-        HEADPHONES_EMOJI,
-        battery ? fmt::format("{}% ", *battery) : "");
+    std::string s;
+    s.reserve(32); // NOLINT
+    s += emoji;
+    s += ' ';
+    if (pct) {
+        s += std::to_string(*pct);
+        s += '%';
+    }
     s += '\n';
     return s;
 }
@@ -146,7 +138,7 @@ std::string ArgosOutput::buildScript() const
     auto pid = getpid();
 
     std::stringstream ss;
-    ss << batteryLine(batteryInfo(state_));
+    ss << batteryLine(batteryPercent(), batteryEmoji());
     ss << std::endl;
     ss << "---" << std::endl;
     if (!state_.isConnected) {

@@ -1,0 +1,13 @@
+[Unit]
+Description=Galaxy Buds+
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/buds+
+ExecStop=/bin/bash -c "rm -f $HOME/.config/argos/buds+.1m.sh"
+Restart=always
+Environment='DISPLAY=:%i'
+RestartSec=5
+
+[Install]
+WantedBy=default.target

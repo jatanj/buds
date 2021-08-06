@@ -52,7 +52,7 @@ public:
 
     Output& output() const { return *output_; }
 
-  private:
+private:
     const Config config_;
     const std::shared_ptr<Output> output_;
     const MessageBuilder builder_{};

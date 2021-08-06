@@ -15,6 +15,7 @@ constexpr inline auto KEY_COMMAND = "command";
 constexpr inline auto KEY_CONNECT = "connect";
 constexpr inline auto KEY_DISCONNECT = "disconnect";
 constexpr inline auto KEY_ADDRESS = "address";
+constexpr inline auto KEY_ON_FAILURE = "on_failure";
 constexpr inline auto KEY_OUTPUT = "output";
 constexpr inline auto KEY_OUTPUT_TYPE = "type";
 constexpr inline auto KEY_OUTPUT_FILE = "file";
@@ -26,6 +27,9 @@ constexpr inline auto KEY_TOUCHPAD_LEFT = "left";
 constexpr inline auto KEY_TOUCHPAD_RIGHT = "right";
 constexpr inline auto KEY_TOUCHPAD_ACTION_TYPE = "type";
 constexpr inline auto KEY_TOUCHPAD_TYPE_BASH_COMMAND = "command";
+
+constexpr inline auto KEY_ON_FAILURE_RECONNECT = "reconnect";
+constexpr inline auto KEY_ON_FAILURE_PAUSE = "pause";
 
 constexpr inline auto EARBUD_LEFT = "left";
 constexpr inline auto EARBUD_RIGHT = "right";
@@ -50,6 +54,28 @@ std::string toLowerTrim(const std::string& str)
     auto s = boost::algorithm::to_lower_copy(str);
     boost::algorithm::trim(s);
     return s;
+}
+
+Config::OnFailure parseOnFailure(const YAML::Node& node)
+{
+    Config::OnFailure onFailure{};
+    if (auto reconnectNode = node[KEY_ON_FAILURE_RECONNECT]) {
+        if (reconnectNode.IsSequence()) {
+            auto v = reconnectNode.as<std::vector<int>>();
+            onFailure.reconnect = std::unordered_set(v.begin(), v.end());
+        } else {
+            LOG_WARN("Failed to parse on-failure reconnect codes");
+        }
+    }
+    if (auto pauseNode = node[KEY_ON_FAILURE_PAUSE]) {
+        if (pauseNode.IsSequence()) {
+            auto v = pauseNode.as<std::vector<int>>();
+            onFailure.pause = std::unordered_set(v.begin(), v.end());
+        } else {
+            LOG_WARN("Failed to parse on-failure pause codes");
+        }
+    }
+    return onFailure;
 }
 
 std::optional<MainEarbud> parseMainEarbud(const std::string& str)
@@ -153,6 +179,9 @@ Config parseConfig(const std::string &path)
     }
     if (auto address = config[KEY_BUDS][KEY_ADDRESS]) {
         result.address = address.as<std::string>();
+    }
+    if (auto onFailure = config[KEY_BUDS][KEY_ON_FAILURE]) {
+        result.onFailure = parseOnFailure(onFailure);
     }
     if (auto outputType = config[KEY_BUDS][KEY_OUTPUT][KEY_OUTPUT_TYPE]) {
         result.output.type = parseOutputType(outputType.as<std::string>());

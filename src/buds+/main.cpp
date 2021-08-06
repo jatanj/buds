@@ -20,7 +20,6 @@ constexpr auto RECONNECT_WAIT_SECONDS = 5;
 constexpr auto RECONNECT_WAIT_MULTIPLIER = 2;
 constexpr auto RECONNECT_WAIT_MAX = 60;
 
-const std::unordered_set<int> RECONNECT_RETURN_CODES{ECONNABORTED}; // NOLINT
 const std::unordered_set<int> SUCCESS_RETURN_CODES{0};              // NOLINT
 
 struct SignalData {
@@ -148,10 +147,16 @@ int main(int argc, char** argv)
         }
 
         auto rc = buds.blockingConnect();
-        if (RECONNECT_RETURN_CODES.count(rc)) {
+        if (config.onFailure.reconnect.count(rc)) {
+            // Wait for a few seconds before attempting to reconnect.
             std::this_thread::sleep_for(std::chrono::seconds(wait));
             wait = std::min(wait * RECONNECT_WAIT_MULTIPLIER, RECONNECT_WAIT_MAX);
+        } else if (config.onFailure.pause.count(rc)) {
+            // Sleep indefinitely until the user manually reconnects.
+            buds.close();
+            signalData.paused = true;
         } else if (SUCCESS_RETURN_CODES.count(rc)) {
+            // Reset wait and attempt to reconnect immediately.
             wait = RECONNECT_WAIT_SECONDS;
         } else {
             return rc;
